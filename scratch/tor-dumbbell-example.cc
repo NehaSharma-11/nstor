@@ -13,8 +13,10 @@ void TtlbCallback(int, double, std::string);
 
 int main (int argc, char *argv[]) {
     uint32_t run = 1;
-    Time simTime = Time("120s");
-    string flavor = "vanilla";
+    Time simTime = Time("90s");
+    //string flavor = "vanilla";
+    //string flavor = "bktap";
+    string flavor = "marut";
 
     CommandLine cmd;
     cmd.AddValue("run", "run number", run);
@@ -47,6 +49,10 @@ int main (int argc, char *argv[]) {
         th.SetTorAppType("ns3::TorPctcpApp");
     else if (flavor == "bktap")
         th.SetTorAppType("ns3::TorBktapApp");
+    else if (flavor == "e2e")
+        th.SetTorAppType("ns3::TorE2eApp");
+    else if (flavor == "marut")
+        th.SetTorAppType("ns3::MarutTorBktapApp");
     else if (flavor == "n23")
         th.SetTorAppType("ns3::TorN23App");
     else if (flavor == "fair")
@@ -60,8 +66,11 @@ int main (int argc, char *argv[]) {
     m_startTime->SetAttribute ("Max", DoubleValue (30.0));
     th.SetStartTimeStream (m_startTime);
 
-    th.ParseFile ("circuits-5000c50r-20150804.dat",10,0.1); // parse scenario from file
-    // th.PrintCircuits();
+    th.ParseFile ("circuits-1c3r-20180507.dat",1,0.); // parse scenario from file
+    //th.ParseFile ("circuits-10000c100r-20150804.dat",100,0.1);
+    //th.ParseFile ("circuits-2c4r-20150804.dat",2,0.);
+    //th.ParseFile ("circuits-20c22r-20150804.dat",20,0.5);
+    th.PrintCircuits();
     th.BuildTopology(); // finally build topology, setup relays and seed circuits
 
     th.RegisterTtfbCallback (TtfbCallback);
@@ -90,12 +99,21 @@ void StatsCallback(TorDumbbellHelper* th, Time simTime) {
     vector<int>::iterator id;
     for (id = th->circuitIds.begin(); id != th->circuitIds.end(); ++id) {
       Ptr<TorBaseApp> proxyApp = th->GetProxyApp(*id);
+      Ptr<TorBaseApp> middleApp = th->GetMiddleApp(*id);
       Ptr<TorBaseApp> exitApp = th->GetExitApp(*id);
       Ptr<BaseCircuit> proxyCirc = proxyApp->baseCircuits[*id];
+      Ptr<BaseCircuit> middleCirc = middleApp->baseCircuits[*id];
       Ptr<BaseCircuit> exitCirc = exitApp->baseCircuits[*id];
-      cout << exitCirc->GetBytesRead(INBOUND) << " " << proxyCirc->GetBytesWritten(INBOUND) << " ";
-      // cout << proxyCirc->GetBytesRead(OUTBOUND) << " " << exitCirc->GetBytesWritten(OUTBOUND) << " ";
-      // proxyCirc->ResetStats(); exitCirc->ResetStats();
+      cout <<"INBOUND: " << endl;
+      cout <<"Exit Node: "<< exitCirc->GetBytesRead(INBOUND) << " " << exitCirc->GetBytesWritten(INBOUND) << endl;
+      cout <<"Middle Node: "<< middleCirc->GetBytesRead(INBOUND) << " " << middleCirc->GetBytesWritten(INBOUND) << endl;
+      cout <<"Proxy Node: "<< proxyCirc->GetBytesRead(INBOUND) << " " << proxyCirc->GetBytesWritten(INBOUND) << endl;
+
+      cout <<"OUTBOUND: " << endl;
+      cout <<"Proxy Node: "<< proxyCirc->GetBytesRead(OUTBOUND) << " " << proxyCirc->GetBytesWritten(OUTBOUND) << endl;
+      cout <<"Middle Node: "<< middleCirc->GetBytesRead(OUTBOUND) << " " << middleCirc->GetBytesWritten(OUTBOUND) << endl;
+      cout <<"Exit Node: "<< exitCirc->GetBytesRead(OUTBOUND) << " " << exitCirc->GetBytesWritten(OUTBOUND) << endl;
+      //proxyCirc->ResetStats(); exitCirc->ResetStats();
     }
     cout << endl;
 
